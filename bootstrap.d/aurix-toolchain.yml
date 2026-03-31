@@ -27,15 +27,13 @@ tools:
     - args:
       - '@THIS_SOURCE_DIR@/configure'
       - '--target=x86_64-aurix'
-      - '--prefix=/usr'
+      - '--prefix=@PREFIX@'
       - '--disable-werror'
       - '--enable-default-execstack=no'
   compile:
     - args: ['make', '-j@PARALLELISM@']
   install:
     - args: ['make', 'install']
-      environ:
-        'DESTDIR': '@SOURCE_ROOT@/toolchain/'
 
 - name: aurix-gcc
   labels: [ x86_64 ]
@@ -48,7 +46,7 @@ tools:
     - args:
       - '@THIS_SOURCE_DIR@/configure'
       - '--target=x86_64-aurix'
-      - '--prefix=/usr'
+      - '--prefix=@PREFIX@'
       - '--enable-languages=c,c++'
       - '--enable-threads=posix'
       - '--disable-multilib'
@@ -63,5 +61,3 @@ tools:
         - args: ['make', '-j@PARALLELISM@', 'all-gcc', 'all-target-libgcc']
       install:
         - args: ['make', 'install-gcc', 'install-target-libgcc']
-          environ:
-            'DESTDIR': '@SOURCE_ROOT@/toolchain/'

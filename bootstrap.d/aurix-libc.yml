@@ -24,7 +24,7 @@ packages:
     - args: ['ninja']
     - args: ['ninja', 'install']
       environ:
-        DESTDIR: '@SOURCE_ROOT@/toolchain/'
+        DESTDIR: '@THIS_COLLECT_DIR@'
 
 - name: mlibc
   labels: [ x86_64 ]
@@ -47,4 +47,4 @@ packages:
     - args: ['ninja']
     - args: ['ninja', 'install']
       environ:
-        DESTDIR: '@SYSROOT_DIR@'
+        DESTDIR: '@THIS_COLLECT_DIR@'

@@ -36,8 +36,6 @@ packages:
     - 'PLATFORM=generic-pc'
     - 'BUILD_DIR=@THIS_BUILD_DIR@/build'
     - 'SYSROOT_DIR=@THIS_BUILD_DIR@/sysroot'
-    environ:
-      'TOOLCHAIN_DIR': '@SOURCE_ROOT@/toolchain/usr/bin'
   install:
   - args:
     - 'make'
@@ -46,6 +44,4 @@ packages:
     - 'install'
     - 'ARCH=x86_64'
     - 'BUILD_DIR=@THIS_BUILD_DIR@/build'
-    environ:
-      'TOOLCHAIN_DIR': '@SOURCE_ROOT@/toolchain/usr/bin'
-      'SYSROOT_DIR': '@THIS_COLLECT_DIR@'
+    - 'SYSROOT_DIR=@THIS_COLLECT_DIR@'
