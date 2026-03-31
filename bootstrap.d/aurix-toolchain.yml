@@ -47,6 +47,7 @@ tools:
       - '@THIS_SOURCE_DIR@/configure'
       - '--target=x86_64-aurix'
       - '--prefix=@PREFIX@'
+      - '--with-sysroot=@SYSROOT_DIR@'
       - '--enable-languages=c,c++'
       - '--enable-threads=posix'
       - '--disable-multilib'

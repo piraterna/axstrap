@@ -32,16 +32,14 @@ packages:
     - 'make'
     - '-C'
     - '@THIS_SOURCE_DIR@'
-    - 'ARCH=x86_64'
-    - 'PLATFORM=generic-pc'
     - 'BUILD_DIR=@THIS_BUILD_DIR@/build'
     - 'SYSROOT_DIR=@THIS_BUILD_DIR@/sysroot'
+    - 'all'
   install:
   - args:
     - 'make'
     - '-C'
     - '@THIS_SOURCE_DIR@'
     - 'install'
-    - 'ARCH=x86_64'
     - 'BUILD_DIR=@THIS_BUILD_DIR@/build'
     - 'SYSROOT_DIR=@THIS_COLLECT_DIR@'

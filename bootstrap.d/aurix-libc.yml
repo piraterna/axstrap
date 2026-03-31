@@ -21,7 +21,7 @@ packages:
       - '-Dheaders_only=true'
       - '@THIS_SOURCE_DIR@'
   build:
-    - args: ['ninja']
+    - args: ['ninja', '-j@PARALLELISM@']
     - args: ['ninja', 'install']
       environ:
         DESTDIR: '@THIS_COLLECT_DIR@'
@@ -44,7 +44,7 @@ packages:
       - '-Dno_headers=true'
       - '@THIS_SOURCE_DIR@'
   build:
-    - args: ['ninja']
+    - args: ['ninja', '-j@PARALLELISM@']
     - args: ['ninja', 'install']
       environ:
         DESTDIR: '@THIS_COLLECT_DIR@'
