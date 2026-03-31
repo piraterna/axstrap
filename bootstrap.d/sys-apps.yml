@@ -26,5 +26,5 @@ packages:
     - 'make'
     - '-C'
     - '@THIS_BUILD_DIR@/ax-apps/init'
-  install:
+  - args: ['mkdir', '-p', '@BUILD_ROOT@/initrd/bin']
   - args: ['cp', '@THIS_BUILD_DIR@/ax-apps/init/init', '@BUILD_ROOT@/initrd/bin/init']

@@ -28,6 +28,7 @@ tools:
       - '@THIS_SOURCE_DIR@/configure'
       - '--target=x86_64-aurix'
       - '--prefix=@PREFIX@'
+      - '--with-sysroot=@SYSROOT_DIR@'
       - '--disable-werror'
       - '--enable-default-execstack=no'
   compile:

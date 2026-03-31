@@ -1,0 +1,54 @@
+sources:
+- name: toybox
+  subdir: sources
+  git: 'https://github.com/landley/toybox.git'
+  branch: master
+  submodules: true
+  rolling_version: true
+  version: '0.0pl@ROLLING_ID@'
+  patch-path-strip: 1
+
+packages:
+- name: toybox
+  default: true
+  labels: [ x86_64 ]
+  architecture: 'x86_64'
+  from_source: toybox
+  revision: 1
+  pkgs_required:
+    - mlibc
+  tools_required:
+    - aurix-gcc
+    - aurix-binutils
+  configure:
+    - args: ['cp', '-r', '@THIS_SOURCE_DIR@/', '@THIS_BUILD_DIR@/']
+  build:
+    - args:
+      - 'make'
+      - '-C'
+      - '@THIS_SOURCE_DIR@'
+      - 'O=@THIS_BUILD_DIR@'
+      - 'KCONFIG_ALLCONFIG=@SOURCE_ROOT@/scripts/aurix-toybox.conf'
+      - 'allnoconfig'
+      - 'HOSTCC=cc'
+
+    - args:
+      - 'make'
+      - '-C'
+      - '@THIS_SOURCE_DIR@'
+      - 'O=@THIS_BUILD_DIR@'
+      - 'toybox'
+      - 'HOSTCC=cc'
+      - 'CC=gcc'
+      - 'CROSS_COMPILE=x86_64-aurix-'
+
+    - args:
+      - 'make'
+      - '-C'
+      - '@THIS_SOURCE_DIR@'
+      - 'O=@THIS_BUILD_DIR@'
+      - 'install'
+      - 'HOSTCC=cc'
+      - 'CC=gcc'
+      - 'CROSS_COMPILE=x86_64-aurix-'
+      - 'PREFIX=@BUILD_ROOT@/initrd/'

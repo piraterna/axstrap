@@ -16,3 +16,6 @@ kernel-sysroot
 kernel-iso
 
 nvram.json
+
+initrd/**/bin
+initrd/**/lib

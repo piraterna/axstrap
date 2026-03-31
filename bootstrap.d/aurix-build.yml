@@ -39,6 +39,25 @@ packages:
     - 'install'
   - args: ['cp', '-r', '@THIS_BUILD_DIR@/aurix/sysroot', '@BUILD_ROOT@/kernel-sysroot']
 
+- name: kernel-initrd
+  default: true
+  labels: [ x86_64 ]
+  architecture: 'x86_64'
+  from_source: aurix
+  revision: 1
+  pkgs_required:
+    - kernel
+    - init
+  build:
+  # setup initrd and copy over libc stuff
+  - args: ['mkdir', '-p', '@BUILD_ROOT@/initrd']
+  - args: ['mkdir', '-p', "@BUILD_ROOT@/initrd/usr/lib/"]
+  - args: ['find', '@SYSROOT_DIR@/usr/lib', '-name', '*.so*', '-exec', 'cp', '-a', '{}', '@BUILD_ROOT@/initrd/usr/lib/', ';']
+  # make the cpio archive
+  - args: ['mkdir', '-p', '@BUILD_ROOT@/kernel-sysroot/System']
+  - args: ['sh', '-c', 'cd "@BUILD_ROOT@/initrd" && find . -type f -o -type l | cpio -o --format=newc -R 0:0 -F "@BUILD_ROOT@/kernel-sysroot/System/initrd.cpio"']
+
+
 - name: kernel-iso
   labels: [ x86_64 ]
   architecture: 'x86_64'
@@ -46,6 +65,7 @@ packages:
   revision: 1
   pkgs_required:
     - kernel
+    - kernel-initrd
   tools_required:
     - aurix-gcc
     - aurix-binutils
@@ -56,4 +76,4 @@ packages:
     - '@THIS_SOURCE_DIR@'
     - 'SYSROOT_DIR=@BUILD_ROOT@/kernel-sysroot'
     - 'livecd'
-  - args: ['cp', '-r', '@THIS_SOURCE_DIR@/release', '@BUILD_ROOT@/kernel-iso']
+  - args: 'cp -r @THIS_SOURCE_DIR@/release/* @BUILD_ROOT@/kernel-iso'

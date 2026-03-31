@@ -1,0 +1,350 @@
+From 272e5b0e4181303c83edda8f126fcb76fb24fc1c Mon Sep 17 00:00:00 2001
+From: Kevin Alavik <kevin@alavik.se>
+Date: Tue, 31 Mar 2026 23:40:18 +0200
+Subject: [PATCH] aurix: portability fallbacks for toybox
+
+---
+ lib/portability.c | 115 ++++++++++++++++++++++++++++++++++++++++++++--
+ lib/portability.h |  32 +++++++++++--
+ lib/tty.c         |  12 ++++-
+ lib/utf8.c        |   2 +
+ lib/xwrap.c       |   2 +
+ toys.h            |   6 ++++
+ 6 files changed, 159 insertions(+), 10 deletions(-)
+
+diff --git a/lib/portability.c b/lib/portability.c
+index 6acb0ec7..c39da1a4 100644
+--- a/lib/portability.c
++++ b/lib/portability.c
+@@ -95,6 +95,7 @@ struct mtab_list *xgetmountlist(char *path)
+ 
+ #else
+ 
++#if __has_include(<mntent.h>)
+ #include <mntent.h>
+ 
+ // Check if this type matches list.
+@@ -166,6 +167,17 @@ struct mtab_list *xgetmountlist(char *path)
+ 
+   return mtlist;
+ }
++#else
++
++int mountlist_istype(struct mtab_list *ml, char *typelist)
++{
++  (void)ml;
++  (void)typelist;
++  return 1;
++}
++
++struct mtab_list *xgetmountlist(char *path) { (void)path; return 0; }
++#endif
+ 
+ #endif
+ 
+@@ -218,6 +230,7 @@ int xnotify_wait(struct xnotify *not, char **path)
+ 
+ #else
+ 
++#if __has_include(<sys/inotify.h>)
+ #include <sys/inotify.h>
+ 
+ struct xnotify *xnotify_init(int max)
+@@ -261,6 +274,40 @@ int xnotify_wait(struct xnotify *not, char **path)
+   }
+ }
+ 
++#else
++
++struct xnotify *xnotify_init(int max)
++{
++  struct xnotify *not = xzalloc(sizeof(struct xnotify));
++
++  not->max = max;
++  not->kq = -1;
++  not->paths = xmalloc(max * sizeof(char *));
++  not->fds = xmalloc(max * sizeof(int));
++
++  return not;
++}
++
++int xnotify_add(struct xnotify *not, int fd, char *path)
++{
++  if (not->max == not->count) error_exit("xnotify_add overflow");
++  not->fds[not->count] = fd;
++  not->paths[not->count++] = path;
++
++  return 0;
++}
++
++int xnotify_wait(struct xnotify *not, char **path)
++{
++  (void)not;
++  (void)path;
++  errno = ENOSYS;
++
++  return -1;
++}
++
++#endif
++
+ #endif
+ 
+ #ifdef __APPLE__
+@@ -313,7 +360,8 @@ ssize_t xattr_fset(int fd, const char* name,
+   return fsetxattr(fd, name, value, size, 0, flags);
+ }
+ 
+-#elif !defined(__FreeBSD__) && !defined(__OpenBSD__)
++#elif !defined(__FreeBSD__) && !defined(__OpenBSD__) && \
++  (!defined(__has_include) || __has_include(<sys/xattr.h>))
+ 
+ ssize_t xattr_get(const char *path, const char *name, void *value, size_t size)
+ {
+@@ -363,6 +411,65 @@ ssize_t xattr_fset(int fd, const char* name,
+   return fsetxattr(fd, name, value, size, flags);
+ }
+ 
++#else
++
++ssize_t xattr_get(const char *path, const char *name, void *value, size_t size)
++{
++  (void)path; (void)name; (void)value; (void)size; errno = ENOTSUP;
++  return -1;
++}
++
++ssize_t xattr_lget(const char *path, const char *name, void *value, size_t size)
++{
++  (void)path; (void)name; (void)value; (void)size; errno = ENOTSUP;
++  return -1;
++}
++
++ssize_t xattr_fget(int fd, const char *name, void *value, size_t size)
++{
++  (void)fd; (void)name; (void)value; (void)size; errno = ENOTSUP;
++  return -1;
++}
++
++ssize_t xattr_list(const char *path, char *list, size_t size)
++{
++  (void)path; (void)list; (void)size; errno = ENOTSUP;
++  return -1;
++}
++
++ssize_t xattr_llist(const char *path, char *list, size_t size)
++{
++  (void)path; (void)list; (void)size; errno = ENOTSUP;
++  return -1;
++}
++
++ssize_t xattr_flist(int fd, char *list, size_t size)
++{
++  (void)fd; (void)list; (void)size; errno = ENOTSUP;
++  return -1;
++}
++
++ssize_t xattr_set(const char* path, const char* name,
++                  const void* value, size_t size, int flags)
++{
++  (void)path; (void)name; (void)value; (void)size; (void)flags; errno = ENOTSUP;
++  return -1;
++}
++
++ssize_t xattr_lset(const char* path, const char* name,
++                   const void* value, size_t size, int flags)
++{
++  (void)path; (void)name; (void)value; (void)size; (void)flags; errno = ENOTSUP;
++  return -1;
++}
++
++ssize_t xattr_fset(int fd, const char* name,
++                   const void* value, size_t size, int flags)
++{
++  (void)fd; (void)name; (void)value; (void)size; (void)flags; errno = ENOTSUP;
++  return -1;
++}
++
+ 
+ #endif
+ 
+@@ -518,7 +625,7 @@ int dev_minor(int dev)
+ #elif defined(__FreeBSD__) || defined(__OpenBSD__)
+   return minor(dev);
+ #else
+-#error
++  return ((dev&0xfff00000)>>12)|(dev&0xff);
+ #endif
+ }
+ 
+@@ -531,7 +638,7 @@ int dev_major(int dev)
+ #elif defined(__FreeBSD__) || defined(__OpenBSD__)
+   return major(dev);
+ #else
+-#error
++  return (dev&0xfff00)>>8;
+ #endif
+ }
+ 
+@@ -544,7 +651,7 @@ int dev_makedev(int major, int minor)
+ #elif defined(__FreeBSD__) || defined(__OpenBSD__)
+   return makedev(major, minor);
+ #else
+-#error
++  return (minor&0xff)|((major&0xfff)<<8)|((minor&0xfff00)<<12);
+ #endif
+ }
+ 
+diff --git a/lib/portability.h b/lib/portability.h
+index e87b919f..ad14ff45 100644
+--- a/lib/portability.h
++++ b/lib/portability.h
+@@ -129,6 +129,12 @@ void *memmem(const void *haystack, size_t haystack_length,
+ #if !defined(__GLIBC__)
+ // POSIX basename.
+ #include <libgen.h>
++// Some libc implementations hide these behind feature macros.
++#include <time.h>
++char *strptime(const char *buf, const char *format, struct tm *tm);
++#include <wchar.h>
++int wcwidth(wchar_t wc);
++long syscall(long number, ...);
+ #endif
+ 
+ // Work out how to do endianness
+@@ -168,9 +174,19 @@ void *memmem(const void *haystack, size_t haystack_length,
+ #endif
+ 
+ // Linux headers not listed by POSIX or LSB
++#if defined(__linux__) || (defined(__has_include) && __has_include(<sys/mount.h>))
+ #include <sys/mount.h>
+-#ifdef __linux__
++#endif
++#if defined(__linux__) || (defined(__has_include) && __has_include(<sys/statfs.h>))
+ #include <sys/statfs.h>
++#else
++struct statfs {
++  unsigned long f_type;
++  unsigned long f_bsize;
++  unsigned long f_frsize;
++};
++#endif
++#ifdef __linux__
+ #include <sys/swap.h>
+ #include <sys/sysinfo.h>
+ #endif
+@@ -178,9 +194,14 @@ void *memmem(const void *haystack, size_t haystack_length,
+ #ifdef __APPLE__
+ #include <util.h>
+ #elif !defined(__FreeBSD__) && !defined(__OpenBSD__)
++#if defined(__has_include) && __has_include(<pty.h>)
+ #include <pty.h>
+ #else
+ #include <termios.h>
++int openpty(int *amaster, int *aslave, char *name, struct termios *termp, struct winsize *winp);
++#endif
++#else
++#include <termios.h>
+ #ifndef IUTF8
+ #define IUTF8 0
+ #endif
+@@ -193,10 +214,12 @@ void *memmem(const void *haystack, size_t haystack_length,
+ int personality(int);
+ #endif
+ 
+-#if defined(__APPLE__) || defined(__linux__)
+-// Linux and macOS has both have getxattr and friends in <sys/xattr.h>, but
+-// they aren't compatible.
++// Linux and macOS both have getxattr and friends in <sys/xattr.h>, but they
++// are not compatible. Aurix may not ship <sys/xattr.h> yet, so include it
++// when available and keep function declarations unconditional.
++#if defined(__has_include) && __has_include(<sys/xattr.h>)
+ #include <sys/xattr.h>
++#endif
+ ssize_t xattr_get(const char *, const char *, void *, size_t);
+ ssize_t xattr_lget(const char *, const char *, void *, size_t);
+ ssize_t xattr_fget(int fd, const char *, void *, size_t);
+@@ -206,7 +229,6 @@ ssize_t xattr_flist(int, char *, size_t);
+ ssize_t xattr_set(const char*, const char*, const void*, size_t, int);
+ ssize_t xattr_lset(const char*, const char*, const void*, size_t, int);
+ ssize_t xattr_fset(int, const char*, const void*, size_t, int);
+-#endif
+ 
+ #if defined(__APPLE__)
+ // macOS doesn't have these functions, but we can fake them.
+diff --git a/lib/tty.c b/lib/tty.c
+index 7c249fcc..ef450f72 100644
+--- a/lib/tty.c
++++ b/lib/tty.c
+@@ -16,6 +16,14 @@
+ 
+ #include "toys.h"
+ 
++#ifndef ECHOCTL
++#define ECHOCTL 0
++#endif
++
++#ifndef ECHOKE
++#define ECHOKE 0
++#endif
++
+ // Check stdout, stderr, stdin (in that order) and if none open /dev/tty
+ int tty_fd(void)
+ {
+@@ -103,7 +111,9 @@ void xsetspeed(struct termios *tio, int bps)
+   int i = bps2cfspeed(bps);
+ 
+   if (!i) error_exit("unknown speed: %d", bps);
+-  cfsetspeed(tio, i);
++  if (cfsetispeed(tio, i) || cfsetospeed(tio, i))
++    perror_exit("cfsetspeed");
++
+ }
+ 
+ // Reset terminal to known state, saving copy of old state if old != NULL.
+diff --git a/lib/utf8.c b/lib/utf8.c
+index d37812cc..5ad3760c 100644
+--- a/lib/utf8.c
++++ b/lib/utf8.c
+@@ -1,5 +1,7 @@
+ #include "toys.h"
+ 
++int wcwidth(wchar_t);
++
+ // Show width many columns, negative means from right edge, out=0 just measure
+ // if escout, send it unprintable chars, otherwise pass through raw data.
+ // Returns width in columns, moves *str to end of data consumed.
+diff --git a/lib/xwrap.c b/lib/xwrap.c
+index 6a910230..dad0c0ee 100644
+--- a/lib/xwrap.c
++++ b/lib/xwrap.c
+@@ -204,7 +204,9 @@ void xvdaemon(void)
+   xopen_stdio("/dev/null", O_RDWR);
+   dup2(0, 1);
+   if (-1 != (fd = open("/dev/tty", O_RDONLY))) {
++#ifdef TIOCNOTTY
+     ioctl(fd, TIOCNOTTY);
++#endif
+     close(fd);
+   }
+   dup2(0, 2);
+diff --git a/toys.h b/toys.h
+index 2d78034f..b886e6aa 100644
+--- a/toys.h
++++ b/toys.h
+@@ -65,8 +65,14 @@
+ 
+ // Non-posix headers
+ #include <sys/ioctl.h>
++#if __has_include(<sys/syscall.h>)
+ #include <sys/syscall.h>
++#elif __has_include(<syscall.h>)
++#include <syscall.h>
++#endif
++#if __has_include(<sys/ttydefaults.h>)
+ #include <sys/ttydefaults.h>
++#endif
+ 
+ #include "lib/lib.h"
+ #include "lib/lsm.h"
+-- 
+2.53.0

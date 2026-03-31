@@ -3,6 +3,7 @@ imports:
   - file: bootstrap.d/aurix-libc.yml
   - file: bootstrap.d/aurix-build.yml
   - file: bootstrap.d/sys-apps.yml
+  - file: bootstrap.d/app-misc.yml
 general:
   patch_author: Kevin Alavik and contributors
   patch_email: kevin@alavik.se
