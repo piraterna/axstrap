@@ -1,6 +1,6 @@
 #!/bin/bash
 LIVECD=$1
-QEMU_FLAGS="-m 4G -smp 4 -serial stdio"
+QEMU_FLAGS="-m 2G -smp 4 -serial stdio"
 QEMU_MACHINE_FLAGS="-machine q35"
 
 qemu-system-x86_64 $QEMU_FLAGS $QEMU_MACHINE_FLAGS \

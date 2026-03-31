@@ -20,8 +20,6 @@ packages:
   tools_required:
     - aurix-gcc
     - aurix-binutils
-  configure:
-    - args: ['cp', '-r', '@THIS_SOURCE_DIR@/', '@THIS_BUILD_DIR@/']
   build:
     - args:
       - 'make'

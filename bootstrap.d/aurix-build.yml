@@ -48,6 +48,7 @@ packages:
   pkgs_required:
     - kernel
     - init
+    - toybox
   build:
   # setup initrd and copy over libc stuff
   - args: ['mkdir', '-p', '@BUILD_ROOT@/initrd']
@@ -76,4 +77,4 @@ packages:
     - '@THIS_SOURCE_DIR@'
     - 'SYSROOT_DIR=@BUILD_ROOT@/kernel-sysroot'
     - 'livecd'
-  - args: 'cp -r @THIS_SOURCE_DIR@/release/* @BUILD_ROOT@/kernel-iso'
+  - args: 'mkdir -p @BUILD_ROOT@/kernel-iso && cp -r @THIS_SOURCE_DIR@/release/* @BUILD_ROOT@/kernel-iso/'
