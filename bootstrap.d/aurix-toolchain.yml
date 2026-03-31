@@ -56,25 +56,12 @@ tools:
       - '--enable-host-shared'
       - '--with-pic'
   stages:
-    - name: compiler
+    - name: compiler-and-libgcc
       pkgs_required:
         - mlibc-headers
       compile:
-        - args: ['make', '-j@PARALLELISM@', 'all-gcc']
+        - args: ['make', '-j@PARALLELISM@', 'all-gcc', 'all-target-libgcc']
       install:
-        - args: ['make', 'install-gcc']
-          environ:
-            'DESTDIR': '@SOURCE_ROOT@/toolchain/'
-
-    - name: libgcc
-      tools_required:
-        - tool: aurix-gcc
-          stage_dependencies: [compiler]
-      pkgs_required:
-        - mlibc
-      compile:
-        - args: ['make', '-j@PARALLELISM@', 'all-target-libgcc']
-      install:
-        - args: ['make', 'install-target-libgcc']
+        - args: ['make', 'install-gcc', 'install-target-libgcc']
           environ:
             'DESTDIR': '@SOURCE_ROOT@/toolchain/'
