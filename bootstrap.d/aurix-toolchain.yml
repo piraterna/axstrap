@@ -1,0 +1,80 @@
+sources:
+- name: binutils
+  subdir: sources
+  version: '2.40'
+  url: 'https://ftp.sunet.se/mirror/gnu.org/gnu/binutils/binutils-2.40.tar.xz'
+  format: 'tar.xz'
+  extract_path: 'binutils-2.40'
+  checksum: 'sha256:0f8a4c272d7f17f369ded10a4aca28b8e304828e95526da482b0ccc4dfc9d8e1'
+  patch-path-strip: 1
+
+- name: gcc
+  subdir: sources
+  version: '15.2.0'
+  url: 'https://ftp.sunet.se/mirror/gnu.org/gnu/gcc/gcc-15.2.0/gcc-15.2.0.tar.xz'
+  format: 'tar.xz'
+  extract_path: 'gcc-15.2.0'
+  checksum: 'sha256:438fd996826b0c82485a29da03a72d71d6e3541a83ec702df4271f6fe025d24e'
+  patch-path-strip: 1
+
+tools:
+- name: aurix-binutils
+  labels: [ x86_64 ]
+  architecture: 'x86_64'
+  from_source: binutils
+  revision: 3
+  configure:
+    - args:
+      - '@THIS_SOURCE_DIR@/configure'
+      - '--target=x86_64-aurix'
+      - '--prefix=/usr'
+      - '--disable-werror'
+      - '--enable-default-execstack=no'
+  compile:
+    - args: ['make', '-j@PARALLELISM@']
+  install:
+    - args: ['make', 'install']
+      environ:
+        'DESTDIR': '@SOURCE_ROOT@/toolchain/'
+
+- name: aurix-gcc
+  labels: [ x86_64 ]
+  architecture: 'x86_64'
+  from_source: gcc
+  tools_required:
+    - aurix-binutils
+  revision: 1
+  configure:
+    - args:
+      - '@THIS_SOURCE_DIR@/configure'
+      - '--target=x86_64-aurix'
+      - '--prefix=/usr'
+      - '--enable-languages=c,c++'
+      - '--enable-threads=posix'
+      - '--disable-multilib'
+      - '--enable-shared'
+      - '--enable-host-shared'
+      - '--with-pic'
+  stages:
+    - name: compiler
+      pkgs_required:
+        - mlibc-headers
+      compile:
+        - args: ['make', '-j@PARALLELISM@', 'all-gcc']
+      install:
+        - args: ['make', 'install-gcc']
+          environ:
+            'DESTDIR': '@SOURCE_ROOT@/toolchain/'
+
+    - name: libgcc
+      tools_required:
+        - tool: aurix-gcc
+          stage_dependencies: [compiler]
+      pkgs_required:
+        - mlibc
+      compile:
+        - args: ['make', '-j@PARALLELISM@', 'all-target-libgcc']
+      install:
+        - args: ['make', 'install-target-libgcc']
+          environ:
+            'DESTDIR': '@SOURCE_ROOT@/toolchain/'

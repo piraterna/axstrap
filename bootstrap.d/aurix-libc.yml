@@ -1,0 +1,50 @@
+sources:
+  - name: mlibc
+    git: 'https://github.com/piraterna/aurix-mlibc.git'
+    branch: 'master'
+    rolling_version: true
+    version: '0.0pl@ROLLING_ID@'
+
+packages:
+- name: mlibc-headers
+  labels: [ x86_64 ]
+  architecture: 'x86_64'
+  revision: 4
+  from_source: mlibc
+  configure:
+    - args:
+      - 'meson'
+      - 'setup'
+      - '--cross-file'
+      - '@SOURCE_ROOT@/scripts/aurix-mlibc.cross-file'
+      - '--prefix=/usr'
+      - '-Dheaders_only=true'
+      - '@THIS_SOURCE_DIR@'
+  build:
+    - args: ['ninja']
+    - args: ['ninja', 'install']
+      environ:
+        DESTDIR: '@SOURCE_ROOT@/toolchain/'
+
+- name: mlibc
+  labels: [ x86_64 ]
+  architecture: 'x86_64'
+  revision: 5
+  from_source: mlibc
+  pkgs_required:
+    - mlibc-headers
+  configure:
+    - args:
+      - 'meson'
+      - 'setup'
+      - '--cross-file'
+      - '@SOURCE_ROOT@/scripts/aurix-mlibc.cross-file'
+      - '--prefix=/usr'
+      - '-Ddefault_library=both'
+      - '-Dno_headers=true'
+      - '@THIS_SOURCE_DIR@'
+  build:
+    - args: ['ninja']
+    - args: ['ninja', 'install']
+      environ:
+        DESTDIR: '@SYSROOT_DIR@'

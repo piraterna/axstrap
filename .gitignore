@@ -1,0 +1,14 @@
+build/
+bootstrap-site.yml
+bootstrap.link
+sources/
+packages/
+tools/
+.xbstrap/
+.env/
+pkg-builds/
+tool-builds/
+ports/
+system-root/
+mlibc/
+toolchain/
