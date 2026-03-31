@@ -1,2 +1,5 @@
 # axstrap
-AurixOS userspace bootstraper
+AurixOS userspace bootstrap repo
+
+## Requirments
+- xbstrap
