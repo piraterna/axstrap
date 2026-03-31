@@ -24,7 +24,7 @@ packages:
     - args: ['ninja', '-j@PARALLELISM@']
     - args: ['ninja', 'install']
       environ:
-        DESTDIR: '@THIS_COLLECT_DIR@'
+        DESTDIR: '@SYSROOT_DIR@'
 
 - name: mlibc
   labels: [ x86_64 ]
@@ -33,6 +33,9 @@ packages:
   from_source: mlibc
   pkgs_required:
     - mlibc-headers
+  tools_required:
+    - aurix-gcc
+    - aurix-binutils
   configure:
     - args:
       - 'meson'
@@ -47,4 +50,4 @@ packages:
     - args: ['ninja', '-j@PARALLELISM@']
     - args: ['ninja', 'install']
       environ:
-        DESTDIR: '@THIS_COLLECT_DIR@'
+        DESTDIR: '@SYSROOT_DIR@'

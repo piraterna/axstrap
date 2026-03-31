@@ -14,3 +14,5 @@ mlibc/
 toolchain/
 kernel-sysroot
 kernel-iso
+
+nvram.json

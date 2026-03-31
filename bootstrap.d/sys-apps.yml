@@ -1,0 +1,30 @@
+sources:
+- name: ax-apps
+  subdir: sources
+  git: 'https://github.com/piraterna/aurix-apps.git'
+  branch: main
+  submodules: false
+  rolling_version: true
+  version: '0.0pl@ROLLING_ID@'
+
+packages:
+- name: init
+  default: false
+  labels: [ x86_64 ]
+  architecture: 'x86_64'
+  from_source: ax-apps
+  revision: 1
+  pkgs_required:
+    - mlibc
+  tools_required:
+    - aurix-gcc
+    - aurix-binutils
+  configure:
+    - args: ['cp', '-r', '@THIS_SOURCE_DIR@/', '@THIS_BUILD_DIR@/']
+  build:
+  - args:
+    - 'make'
+    - '-C'
+    - '@THIS_BUILD_DIR@/ax-apps/init'
+  install:
+  - args: ['cp', '@THIS_BUILD_DIR@/ax-apps/init/init', '@BUILD_ROOT@/initrd/bin/init']
