@@ -20,26 +20,40 @@ packages:
     - aurix-gcc
     - aurix-binutils
   configure:
+    - args: ['cp', '-r', '@THIS_SOURCE_DIR@', '@THIS_BUILD_DIR@']
     - args:
       - 'make'
       - '-C'
-      - '@THIS_SOURCE_DIR@'
-      - 'ARCH=x86_64'
-      - 'PLATFORM=generic-pc'
+      - '@THIS_BUILD_DIR@/aurix'
       - 'defconfig'
   build:
   - args:
     - 'make'
     - '-C'
-    - '@THIS_SOURCE_DIR@'
-    - 'BUILD_DIR=@THIS_BUILD_DIR@/build'
-    - 'SYSROOT_DIR=@THIS_BUILD_DIR@/sysroot'
+    - '@THIS_BUILD_DIR@/aurix'
     - 'all'
-  install:
+  - args:
+    - 'make'
+    - '-C'
+    - '@THIS_BUILD_DIR@/aurix'
+    - 'install'
+  - args: ['cp', '-r', '@THIS_BUILD_DIR@/aurix/sysroot', '@BUILD_ROOT@/kernel-sysroot']
+
+- name: kernel-iso
+  labels: [ x86_64 ]
+  architecture: 'x86_64'
+  from_source: aurix
+  revision: 1
+  pkgs_required:
+    - kernel
+  tools_required:
+    - aurix-gcc
+    - aurix-binutils
+  build:
   - args:
     - 'make'
     - '-C'
     - '@THIS_SOURCE_DIR@'
-    - 'install'
-    - 'BUILD_DIR=@THIS_BUILD_DIR@/build'
-    - 'SYSROOT_DIR=@THIS_COLLECT_DIR@'
+    - 'SYSROOT_DIR=@BUILD_ROOT@/kernel-sysroot'
+    - 'livecd'
+  - args: ['cp', '-r', '@THIS_SOURCE_DIR@/release', '@BUILD_ROOT@/kernel-iso']
