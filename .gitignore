@@ -19,3 +19,5 @@ nvram.json
 
 initrd/**/bin
 initrd/**/lib
+initrd/**/lib64
+initrd/**/share

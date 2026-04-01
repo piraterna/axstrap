@@ -1,0 +1,44 @@
+sources:
+- name: yash
+  subdir: sources
+  version: '2.61'
+  url: 'https://github.com/magicant/yash/releases/download/2.61/yash-2.61.tar.xz'
+  format: 'tar.xz'
+  extract_path: 'yash-2.61'
+  checksum: 'sha256:a214966f4ff8b293aa5521a4d3ef6e87d707579eee616aa2f8218edaa920d447'
+
+packages:
+- name: yash
+  default: false
+  labels: [ x86_64 ]
+  architecture: 'x86_64'
+  from_source: yash
+  revision: 1
+  pkgs_required:
+    - mlibc
+  tools_required:
+    - aurix-gcc
+    - aurix-binutils
+  configure:
+    - args:
+      - 'cp'
+      - '-r'
+      - '@THIS_SOURCE_DIR@/.'
+      - '@THIS_BUILD_DIR@/'
+
+    - args:
+      - 'sh'
+      - '@THIS_BUILD_DIR@/configure'
+      - '--host=x86_64-aurix'
+      - '--prefix=/usr'
+      - '--bindir=/bin'
+      - '--disable-lineedit'
+      - '--disable-history'
+      - '--disable-nls'
+      - '--disable-doc'
+      environ:
+        CC: 'x86_64-aurix-gcc'
+  build:
+    - args: ['make', '-C', '@THIS_BUILD_DIR@', '-j@PARALLELISM@']
+    - args: ['mkdir', '-p', '@BUILD_ROOT@/initrd/bin']
+    - args: ['cp', '@THIS_BUILD_DIR@/yash', '@BUILD_ROOT@/initrd/bin/yash']
