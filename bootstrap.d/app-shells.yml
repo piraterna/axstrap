@@ -7,6 +7,14 @@ sources:
   extract_path: 'yash-2.61'
   checksum: 'sha256:a214966f4ff8b293aa5521a4d3ef6e87d707579eee616aa2f8218edaa920d447'
 
+- name: aurum
+  subdir: sources
+  git: 'https://github.com/purpleK2/aurum.git'
+  branch: trunk
+  submodules: false
+  rolling_version: true
+  version: '0.0pl@ROLLING_ID@'
+
 packages:
 - name: yash
   default: false
@@ -42,3 +50,32 @@ packages:
     - args: ['make', '-C', '@THIS_BUILD_DIR@', '-j@PARALLELISM@']
     - args: ['mkdir', '-p', '@BUILD_ROOT@/initrd/bin']
     - args: ['cp', '@THIS_BUILD_DIR@/yash', '@BUILD_ROOT@/initrd/bin/yash']
+
+- name: aurum
+  default: false
+  labels: [ x86_64 ]
+  architecture: 'x86_64'
+  from_source: aurum
+  revision: 1
+  pkgs_required:
+    - mlibc
+  tools_required:
+    - aurix-gcc
+    - aurix-binutils
+  configure:
+    - args: ['cp', '-r', '@THIS_SOURCE_DIR@/', '@THIS_BUILD_DIR@/']
+  build:
+    - args: 
+      - 'make'
+      - '-C'
+      - '@THIS_BUILD_DIR@/aurum'
+      - 'CC=x86_64-aurix-gcc'
+      - 'LD=x86_64-aurix-gcc'
+      - 'CFLAGS=-Wextra -Werror -Iinclude/ -DUSE_JOBCONTROL -DUSE_LINEEDITOR -fPIE'
+      - 'PREFIX=@BUILD_ROOT@/initrd/'
+    - args:
+      - 'make'
+      - '-C'
+      - '@THIS_BUILD_DIR@/aurum'
+      - 'install'
+      - 'PREFIX=@BUILD_ROOT@/initrd/'
