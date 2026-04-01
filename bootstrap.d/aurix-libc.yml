@@ -2,6 +2,7 @@ sources:
   - name: mlibc
     git: 'https://github.com/piraterna/aurix-mlibc.git'
     branch: 'master'
+    subdir: sources
     rolling_version: true
     version: '0.0pl@ROLLING_ID@'
 

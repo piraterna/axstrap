@@ -10,8 +10,6 @@ pkg-builds/
 tool-builds/
 ports/
 system-root/
-mlibc/
-toolchain/
 kernel-sysroot
 kernel-iso
 
