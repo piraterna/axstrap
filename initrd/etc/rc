@@ -1,0 +1,5 @@
+#!/bin/sh
+echo "rc: setting hostname"
+hostname aurix
+
+echo "rc: boot complete"

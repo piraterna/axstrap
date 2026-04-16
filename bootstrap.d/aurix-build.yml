@@ -31,7 +31,9 @@ packages:
     - 'make'
     - '-C'
     - '@THIS_BUILD_DIR@/aurix'
+    - 'BUILD_TYPE=debug'
     - 'all'
+    - '-j@PARALLELISM@'
   - args:
     - 'make'
     - '-C'
@@ -49,6 +51,9 @@ packages:
     - kernel
     - init
     - toybox
+  tools_required:
+    - aurix-gcc
+    - aurix-binutils
   build:
   # setup initrd and copy over libc stuff
   - args: ['mkdir', '-p', '@BUILD_ROOT@/initrd']
@@ -71,10 +76,13 @@ packages:
     - aurix-gcc
     - aurix-binutils
   build:
+  - args: 'rm -rf @THIS_SOURCE_DIR@/release'
   - args:
     - 'make'
     - '-C'
     - '@THIS_SOURCE_DIR@'
     - 'SYSROOT_DIR=@BUILD_ROOT@/kernel-sysroot'
+    - 'BUILD_TYPE=debug'
+    - '-j@PARALLELISM@'
     - 'livecd'
   - args: 'mkdir -p @BUILD_ROOT@/kernel-iso && cp -r @THIS_SOURCE_DIR@/release/* @BUILD_ROOT@/kernel-iso/'
