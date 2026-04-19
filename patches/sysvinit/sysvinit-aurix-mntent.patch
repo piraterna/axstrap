@@ -1,0 +1,58 @@
+From c60926c5b6c052fc48b33db04921e756d4cca229 Mon Sep 17 00:00:00 2001
+From: Kevin Alavik <kevin@alavik.se>
+Date: Sun, 19 Apr 2026 12:57:33 +0200
+Subject: [PATCH] aurix: allow building killall5 without mntent.h
+
+---
+ src/killall5.c | 22 +++++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
+
+diff --git a/src/killall5.c b/src/killall5.c
+index 1a3178f..3aba61f 100644
+--- a/src/killall5.c
++++ b/src/killall5.c
+@@ -44,7 +44,17 @@
+ #include <errno.h>
+ #include <getopt.h>
+ #include <limits.h>
+-#include <mntent.h>
++#if defined(__has_include)
++#  if __has_include(<mntent.h>)
++#    include <mntent.h>
++#    define SYSVINIT_HAVE_MNTENT 1
++#  else
++#    define SYSVINIT_HAVE_MNTENT 0
++#  endif
++#else
++#  include <mntent.h>
++#  define SYSVINIT_HAVE_MNTENT 1
++#endif
+ #include <stdarg.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -237,6 +247,7 @@ int mount_proc(void)
+ 	return did_mount;
+ }
+ 
++#if SYSVINIT_HAVE_MNTENT
+ static inline int isnetfs(const char * type)
+ {
+ 	static const char* netfs[] = {"nfs", "nfs4", "smbfs", "cifs", "afs", "ncpfs", (char*)0};
+@@ -314,6 +325,15 @@ void init_nfs(void)
+ 	endmntent(mnt);
+ }
+ 
++#else /* SYSVINIT_HAVE_MNTENT */
++
++void init_nfs(void)
++{
++	/* No mntent implementation; treat all FS as non-network. */
++}
++
++#endif /* SYSVINIT_HAVE_MNTENT */
++
+ static void clear_shadow(SHADOW *restrict shadow)
+ {
+ 	SHADOW *s, *n, *l;
+-- 
+2.43.0

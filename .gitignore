@@ -16,6 +16,7 @@ kernel-iso
 nvram.json
 
 initrd/**/bin
+initrd/**/sbin
 initrd/**/lib
 initrd/**/lib64
 initrd/**/share

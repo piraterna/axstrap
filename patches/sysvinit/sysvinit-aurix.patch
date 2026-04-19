@@ -1,0 +1,228 @@
+From 71633bf4a4cc6b008adb144960b3fbdd256a353f Mon Sep 17 00:00:00 2001
+From: Kevin Alavik <kevin@alavik.se>
+Date: Sun, 19 Apr 2026 12:49:01 +0200
+Subject: [PATCH] aurix: provide utmp compatibility via utmpx
+
+---
+ src/dowall.c   |  3 +--
+ src/halt.c     |  2 +-
+ src/init.c     |  6 +----
+ src/last.c     |  2 +-
+ src/runlevel.c |  3 +--
+ src/shutdown.c |  6 +----
+ src/utmp.c     |  7 +----
+ src/utmp.h     | 71 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ src/utmpdump.c |  2 +-
+ 9 files changed, 79 insertions(+), 23 deletions(-)
+ create mode 100644 src/utmp.h
+
+diff --git a/src/dowall.c b/src/dowall.c
+index cc9583a..429d605 100644
+--- a/src/dowall.c
++++ b/src/dowall.c
+@@ -31,7 +31,7 @@
+ #include <time.h>
+ #include <unistd.h>
+ #include <stdio.h>
+-#include <utmp.h>
++#include "utmp.h"
+ #include <pwd.h>
+ #include <fcntl.h>
+ #include <signal.h>
+@@ -259,4 +259,3 @@ void wall(const char *text, int remote)
+ 
+ 	exit(0);
+ }
+-
+diff --git a/src/halt.c b/src/halt.c
+index a1d6cef..982fe08 100644
+--- a/src/halt.c
++++ b/src/halt.c
+@@ -49,7 +49,7 @@
+ #include <sys/stat.h>
+ #include <sys/param.h>
+ #include <stdlib.h>
+-#include <utmp.h>
++#include "utmp.h"
+ #include <fcntl.h>
+ #include <string.h>
+ #include <unistd.h>
+diff --git a/src/init.c b/src/init.c
+index 0b00322..3ffe3bb 100644
+--- a/src/init.c
++++ b/src/init.c
+@@ -53,11 +53,7 @@ Version information is not placed in the top-level Makefile by default
+ #include <string.h>
+ #include <signal.h>
+ #include <termios.h>
+-#ifdef __FreeBSD__
+-#include <utmpx.h>
+-#else
+-#include <utmp.h>
+-#endif
++#include "utmp.h"
+ #include <ctype.h>
+ #include <stdarg.h>
+ #include <sys/ttydefaults.h>
+diff --git a/src/last.c b/src/last.c
+index 406876b..06cb7a0 100644
+--- a/src/last.c
++++ b/src/last.c
+@@ -32,7 +32,7 @@
+ #include <time.h>
+ #include <stdio.h>
+ #include <ctype.h>
+-#include <utmp.h>
++#include "utmp.h"
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+diff --git a/src/runlevel.c b/src/runlevel.c
+index e5fa037..b5fe737 100644
+--- a/src/runlevel.c
++++ b/src/runlevel.c
+@@ -22,7 +22,7 @@
+  */
+ 
+ #include <stdio.h>
+-#include <utmp.h>
++#include "utmp.h"
+ #include <time.h>
+ #include <stdlib.h>
+ #include "runlevellog.h"
+@@ -58,4 +58,3 @@ char **argv;
+   printf("unknown\n");
+   return(1);
+ }
+-
+diff --git a/src/shutdown.c b/src/shutdown.c
+index 8580ab5..d16499d 100644
+--- a/src/shutdown.c
++++ b/src/shutdown.c
+@@ -54,11 +54,7 @@
+ #include <signal.h>
+ #include <fcntl.h>
+ #include <stdarg.h>
+-#ifdef __FreeBSD__
+-#include <utmpx.h>
+-#else
+-#include <utmp.h>
+-#endif
++#include "utmp.h"
+ #include <syslog.h>
+ #include "paths.h"
+ #include "reboot.h"
+diff --git a/src/utmp.c b/src/utmp.c
+index fce3e32..998d686 100644
+--- a/src/utmp.c
++++ b/src/utmp.c
+@@ -32,11 +32,7 @@
+ #include <time.h>
+ #include <fcntl.h>
+ #include <string.h>
+-#ifdef __FreeBSD__
+-#include <utmpx.h>
+-#else
+-#include <utmp.h>
+-#endif
++#include "utmp.h"
+ 
+ #include "init.h"
+ #include "initreq.h"
+@@ -265,4 +261,3 @@ char *line)			/* LINE if used. */
+ 	write_utmp(user, id, pid, type, line, oldline);
+ 	write_wtmp(user, id, pid, type, line && line[0] ? line : oldline);
+ }
+-
+diff --git a/src/utmp.h b/src/utmp.h
+new file mode 100644
+index 0000000..6eeb54a
+--- /dev/null
++++ b/src/utmp.h
+@@ -0,0 +1,71 @@
++#ifndef SYSVINIT_AURIX_UTMP_H
++#define SYSVINIT_AURIX_UTMP_H
++
++/*
++ * sysvinit expects the legacy <utmp.h> API (struct utmp + setutent(),
++ * getutent(), pututline(), updwtmp(), ...).
++ *
++ * mlibc (used by aurix) provides <utmpx.h> and the utmpx APIs instead.
++ * Provide a small compatibility shim by mapping utmp -> utmpx.
++ */
++
++#if defined(__has_include)
++#  if __has_include(<mlibc-config.h>)
++#    include <mlibc-config.h>
++#    define SYSVINIT_HAS_MLIBC 1
++#  endif
++#endif
++
++#if defined(SYSVINIT_HAS_MLIBC)
++#  include <utmpx.h>
++
++  /* Make sysvinit's "struct utmp" refer to mlibc's struct utmpx. */
++#  define utmp utmpx
++
++  /* Size macros expected by sysvinit code. */
++#  ifndef UT_LINESIZE
++#    define UT_LINESIZE __UT_LINESIZE
++#  endif
++#  ifndef UT_NAMESIZE
++#    define UT_NAMESIZE __UT_NAMESIZE
++#  endif
++#  ifndef UT_HOSTSIZE
++#    define UT_HOSTSIZE __UT_HOSTSIZE
++#  endif
++
++  /* File paths expected by sysvinit code. */
++#  ifndef UTMP_FILE
++#    define UTMP_FILE UTMPX_FILE
++#  endif
++#  ifndef WTMP_FILE
++#    define WTMP_FILE WTMPX_FILE
++#  endif
++
++  /* Field aliases used by sysvinit (utmp vs utmpx / libc differences). */
++#  ifndef ut_time
++#    define ut_time ut_tv.tv_sec
++#  endif
++#  ifndef ut_name
++    /* Some code uses ut_name (glibc); utmpx uses ut_user. */
++#    define ut_name ut_user
++#  endif
++#  ifndef ut_addr
++    /* Historic ut_addr (IPv4) maps to first v6 word in utmpx. */
++#    define ut_addr ut_addr_v6[0]
++#  endif
++
++  /* Function aliases. */
++#  define setutent  setutxent
++#  define endutent  endutxent
++#  define getutent  getutxent
++#  define getutid   getutxid
++#  define getutline getutxline
++#  define pututline pututxline
++#  define updwtmp   updwtmpx
++#  define utmpname  utmpxname
++
++#else
++#  include <utmp.h>
++#endif
++
++#endif /* SYSVINIT_AURIX_UTMP_H */
+diff --git a/src/utmpdump.c b/src/utmpdump.c
+index f918041..81b6118 100644
+--- a/src/utmpdump.c
++++ b/src/utmpdump.c
+@@ -30,7 +30,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <utmp.h>
++#include "utmp.h"
+ #include <time.h>
+ #include <ctype.h>
+ #include <unistd.h>
+-- 
+2.43.0

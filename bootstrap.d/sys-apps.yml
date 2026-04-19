@@ -7,6 +7,14 @@ sources:
   rolling_version: true
   version: '0.0pl@ROLLING_ID@'
 
+- name: sysvinit
+  subdir: sources
+  git: 'https://codeberg.org/thejessesmith/sysvinit.git'
+  branch: main
+  submodules: false
+  rolling_version: true
+  version: '0.0pl@ROLLING_ID@'
+
 packages:
 - name: init
   default: false
@@ -27,4 +35,62 @@ packages:
     - '-C'
     - '@THIS_BUILD_DIR@/ax-apps/init'
   - args: ['mkdir', '-p', '@BUILD_ROOT@/initrd/bin']
-  - args: ['cp', '@THIS_BUILD_DIR@/ax-apps/init/init', '@BUILD_ROOT@/initrd/bin/init']
+  # Avoid colliding with sysvinit's /bin/init -> /sbin/init symlink.
+  - args: ['cp', '@THIS_BUILD_DIR@/ax-apps/init/init', '@BUILD_ROOT@/initrd/bin/axinit']
+
+- name: sysvinit
+  default: false
+  labels: [ x86_64 ]
+  architecture: 'x86_64'
+  from_source: sysvinit
+  revision: 1
+  pkgs_required:
+    - mlibc
+  tools_required:
+    - aurix-gcc
+    - aurix-binutils
+
+  configure:
+    - args: ['cp', '-r', '@THIS_SOURCE_DIR@/.', '@THIS_BUILD_DIR@/']
+
+  build:
+    - args:
+      - 'make'
+      - '-C'
+      - '@THIS_BUILD_DIR@/src'
+      - 'CC=x86_64-aurix-gcc'
+      - 'ROOT=@BUILD_ROOT@/initrd'
+      - 'init'
+      - 'halt'
+      - 'shutdown'
+      - 'runlevel'
+      - 'killall5'
+      - 'fstab-decode'
+      - 'logsave'
+      - 'last'
+      - 'mesg'
+      - 'readbootlog'
+
+    - args: ['mkdir', '-p', '@BUILD_ROOT@/initrd/sbin']
+    - args: ['mkdir', '-p', '@BUILD_ROOT@/initrd/bin']
+    - args: ['mkdir', '-p', '@BUILD_ROOT@/initrd/usr/bin']
+    - args: ['mkdir', '-p', '@BUILD_ROOT@/initrd/etc/inittab.d']
+
+    - args: ['cp', '@THIS_BUILD_DIR@/src/init',         '@BUILD_ROOT@/initrd/sbin/init']
+    - args: ['cp', '@THIS_BUILD_DIR@/src/halt',         '@BUILD_ROOT@/initrd/sbin/halt']
+    - args: ['cp', '@THIS_BUILD_DIR@/src/shutdown',     '@BUILD_ROOT@/initrd/sbin/shutdown']
+    - args: ['cp', '@THIS_BUILD_DIR@/src/runlevel',     '@BUILD_ROOT@/initrd/sbin/runlevel']
+    - args: ['cp', '@THIS_BUILD_DIR@/src/killall5',     '@BUILD_ROOT@/initrd/sbin/killall5']
+    - args: ['cp', '@THIS_BUILD_DIR@/src/fstab-decode', '@BUILD_ROOT@/initrd/sbin/fstab-decode']
+    - args: ['cp', '@THIS_BUILD_DIR@/src/logsave',      '@BUILD_ROOT@/initrd/sbin/logsave']
+
+    - args: ['cp', '@THIS_BUILD_DIR@/src/last',         '@BUILD_ROOT@/initrd/usr/bin/last']
+    - args: ['cp', '@THIS_BUILD_DIR@/src/mesg',         '@BUILD_ROOT@/initrd/usr/bin/mesg']
+    - args: ['cp', '@THIS_BUILD_DIR@/src/readbootlog',  '@BUILD_ROOT@/initrd/usr/bin/readbootlog']
+
+    - args: ['ln', '-sf', 'init',     '@BUILD_ROOT@/initrd/sbin/telinit']
+    - args: ['ln', '-sf', 'halt',     '@BUILD_ROOT@/initrd/sbin/reboot']
+    - args: ['ln', '-sf', 'halt',     '@BUILD_ROOT@/initrd/sbin/poweroff']
+    - args: ['ln', '-sf', '/sbin/killall5', '@BUILD_ROOT@/initrd/bin/pidof']
+
+    - args: ['ln', '-sf', '/sbin/init', '@BUILD_ROOT@/initrd/bin/init']

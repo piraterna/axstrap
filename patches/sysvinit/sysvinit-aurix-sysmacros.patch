@@ -1,0 +1,30 @@
+From 13ecd48f2438103975ac89e1e9c09d0b70ce78f4 Mon Sep 17 00:00:00 2001
+From: Kevin Alavik <kevin@alavik.se>
+Date: Sun, 19 Apr 2026 12:55:59 +0200
+Subject: [PATCH] aurix: build without sys/sysmacros.h
+
+---
+ src/dowall.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/src/dowall.c b/src/dowall.c
+index 429d605..8e54bf3 100644
+--- a/src/dowall.c
++++ b/src/dowall.c
+@@ -24,7 +24,14 @@
+  */
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#if !defined(__aurix__)
+ #include <sys/sysmacros.h>
++#else
++/* aurix: no sys/sysmacros.h; don't filter by device major. */
++#ifndef major
++#define major(x) 0
++#endif
++#endif
+ #include <limits.h>
+ #include <stdlib.h>
+ #include <string.h>
+-- 
+2.43.0

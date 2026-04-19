@@ -49,7 +49,6 @@ packages:
   revision: 1
   pkgs_required:
     - kernel
-    - init
     - toybox
   tools_required:
     - aurix-gcc

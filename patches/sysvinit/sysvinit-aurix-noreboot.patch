@@ -1,0 +1,49 @@
+From 62cda8b6b9369fc0bf905e2d44aa83c6f4c9be57 Mon Sep 17 00:00:00 2001
+From: Kevin Alavik <kevin@alavik.se>
+Date: Sun, 19 Apr 2026 12:54:29 +0200
+Subject: [PATCH] aurix: stub reboot support
+
+---
+ src/reboot.h | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/src/reboot.h b/src/reboot.h
+index d2c73b6..7daec5e 100644
+--- a/src/reboot.h
++++ b/src/reboot.h
+@@ -21,6 +21,28 @@
+  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+  */
+ 
++/*
++ * aurix currently does not support reboot/poweroff syscalls.
++ * Provide stubs so sysvinit can still build.
++ */
++#ifdef __aurix__
++#include <errno.h>
++
++#define BMAGIC_HARD 0
++#define BMAGIC_SOFT 0
++#define BMAGIC_HALT 0
++#define BMAGIC_REBOOT 0
++#define BMAGIC_POWEROFF 0
++#define BMAGIC_KEXEC 0
++
++static int init_reboot(int magic) {
++	(void)magic;
++	errno = ENOSYS;
++	return -1;
++}
++
++#else
++
+ #include <sys/reboot.h>
+ 
+ #ifdef RB_ENABLE_CAD
+@@ -52,3 +74,4 @@
+ 
+ #define init_reboot(magic)	reboot(magic)
+ 
++#endif /* !__aurix__ */
+-- 
+2.43.0

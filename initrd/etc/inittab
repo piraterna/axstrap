@@ -1,0 +1,3 @@
+id:3:initdefault:
+si::sysinit:/etc/init.d/rcS
+sh:3:respawn:/bin/sh -i </dev/console >/dev/console 2>&1
